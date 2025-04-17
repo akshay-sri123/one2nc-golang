@@ -63,7 +63,7 @@ func TestCheckIfFileNotExists(t *testing.T) {
 	}
 }
 
-func TestCheckIfDirOrFile(t *testing.T) {
+func TestCheckIfNotFileOrDir(t *testing.T) {
 	filename := "test-dir"
 	expected := false
 	got := checkIfFileOrDir(filename)
@@ -86,6 +86,16 @@ func TestCheckIfFileOrDir(t *testing.T) {
 func TestCheckFilePermissions(t *testing.T) {
 	filename := "protected-file"
 	expected := false
+	got := checkFilePermissions(filename)
+
+	if expected != got {
+		t.Errorf("Expected %v, got %v", expected, got)
+	}
+}
+
+func TestCheckFileNotPermissions(t *testing.T) {
+	filename := "text"
+	expected := true
 	got := checkFilePermissions(filename)
 
 	if expected != got {
