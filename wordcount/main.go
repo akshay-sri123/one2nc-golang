@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"slices"
 	"strings"
 )
 
@@ -95,18 +94,29 @@ func countOperations(filename string, operationFlag string) {
 		fmt.Fprintf(os.Stdout, "%8d %s\n", countWords(text), filename)
 	case "-c":
 		fmt.Fprintf(os.Stdout, "%8d %s\n", countCharacters(text), filename)
+	case "all":
+		fmt.Fprintf(os.Stdout, "%8d %8d %8d %s\n", countLines(text), countWords(text), countCharacters(text), filename)
 	}
 }
 
 func main() {
 	cmdArgs := os.Args
-	command := cmdArgs[0]
-	operationFlag := cmdArgs[1]
-	filename := cmdArgs[2]
+	operationFlag := ""
+	filename := ""
+	command := ""
+	// allowedOperations := []string{"-l","-l","-l","-l"}
 
-	if len(cmdArgs) != 3 || !slices.Contains([]string{"-l", "-c", "-w"}, operationFlag) {
+	if len(cmdArgs) > 3 {
 		fmt.Fprintf(os.Stderr, "Incorrect usage.\n")
 		os.Exit(1)
+	} else if len(cmdArgs) == 2 {
+		command = cmdArgs[0]
+		operationFlag = "all"
+		filename = cmdArgs[1]
+	} else {
+		command = cmdArgs[0]
+		operationFlag = cmdArgs[1]
+		filename = cmdArgs[2]
 	}
 
 	checkFile(filename, command)
