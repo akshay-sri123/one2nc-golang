@@ -1,4 +1,4 @@
-package main
+package operations
 
 import (
 	"testing"
@@ -44,7 +44,7 @@ There are squids in other families that also have hooks, but no other squid in t
 }
 
 func TestCheckIfFileExists(t *testing.T) {
-	filename := "text"
+	filename := "test-data/text"
 	expected := true
 	got := checkIfFileExists(filename)
 
@@ -54,7 +54,7 @@ func TestCheckIfFileExists(t *testing.T) {
 }
 
 func TestCheckIfFileNotExists(t *testing.T) {
-	filename := "test-file.txt"
+	filename := "test-data/test-file.txt"
 	expected := false
 	got := checkIfFileExists(filename)
 
@@ -64,7 +64,7 @@ func TestCheckIfFileNotExists(t *testing.T) {
 }
 
 func TestCheckIfNotFileOrDir(t *testing.T) {
-	filename := "test-dir"
+	filename := "test-data/test-dir"
 	expected := false
 	got := checkIfFileOrDir(filename)
 
@@ -74,7 +74,7 @@ func TestCheckIfNotFileOrDir(t *testing.T) {
 }
 
 func TestCheckIfFileOrDir(t *testing.T) {
-	filename := "test-file"
+	filename := "test-data/test-file"
 	expected := true
 	got := checkIfFileOrDir(filename)
 
@@ -84,7 +84,7 @@ func TestCheckIfFileOrDir(t *testing.T) {
 }
 
 func TestCheckFilePermissions(t *testing.T) {
-	filename := "protected-file"
+	filename := "test-data/protected-file"
 	expected := false
 	got := checkFilePermissions(filename)
 
@@ -94,7 +94,7 @@ func TestCheckFilePermissions(t *testing.T) {
 }
 
 func TestCheckFileNotPermissions(t *testing.T) {
-	filename := "text"
+	filename := "test-data/text"
 	expected := true
 	got := checkFilePermissions(filename)
 
