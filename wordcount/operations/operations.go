@@ -68,20 +68,22 @@ func checkFilePermissions(filename string) bool {
 	return true
 }
 
-func CheckFile(filename string, command string) {
-	if !checkIfFileExists(filename) {
-		fmt.Fprintf(os.Stderr, "%s: %s: read: No such file or directory\n", command, filename)
-		os.Exit(1)
-	}
+func CheckFile(filesToProcess []string, command string) {
+	for _, filename := range filesToProcess {
+		if !checkIfFileExists(filename) {
+			fmt.Fprintf(os.Stderr, "%s: %s: read: No such file or directory\n", command, filename)
+			os.Exit(1)
+		}
 
-	if !checkIfFileOrDir(filename) {
-		fmt.Fprintf(os.Stderr, "%s: %s: open: Is a directory\n", command, filename)
-		os.Exit(1)
-	}
+		if !checkIfFileOrDir(filename) {
+			fmt.Fprintf(os.Stderr, "%s: %s: open: Is a directory\n", command, filename)
+			os.Exit(1)
+		}
 
-	if !checkFilePermissions(filename) {
-		fmt.Fprintf(os.Stderr, "%s: %s: open: Permission denied\n", command, filename)
-		os.Exit(1)
+		if !checkFilePermissions(filename) {
+			fmt.Fprintf(os.Stderr, "%s: %s: open: Permission denied\n", command, filename)
+			os.Exit(1)
+		}
 	}
 }
 
@@ -92,22 +94,34 @@ func readTextFromFile(filename string) string {
 	return string(data)
 }
 
-func CountOperations(filename string, executeOperations FlagOperations) OperationResults {
-	var operationResults OperationResults
-	text := readTextFromFile(filename)
-	// fmt.Println(executeOperations)
+func CountOperations(executeOperations FlagOperations, filesToProcess []string) []OperationResults {
+	var operationResultsList []OperationResults
+	for _, file := range filesToProcess {
+		var operationResults OperationResults
+		text := readTextFromFile(file)
 
-	if executeOperations.CLines {
-		operationResults.NLines = countLines(text)
+		if executeOperations.CLines {
+			operationResults.NLines = countLines(text)
+		}
+
+		if executeOperations.CWords {
+			operationResults.NWords = countWords(text)
+		}
+
+		if executeOperations.CChars {
+			operationResults.NChars = countCharacters(text)
+		}
+
+		if !executeOperations.CLines && !executeOperations.CWords && !executeOperations.CChars {
+			operationResults.NLines = countLines(text)
+			operationResults.NWords = countWords(text)
+			operationResults.NChars = countCharacters(text)
+		}
+
+		operationResults.filename = file
+		operationResultsList = append(operationResultsList, operationResults)
 	}
-	if executeOperations.CWords {
-		operationResults.NWords = countWords(text)
-	}
-	if executeOperations.CChars {
-		operationResults.NChars = countCharacters(text)
-	}
-	operationResults.filename = filename
-	return operationResults
+	return operationResultsList
 }
 
 func check(e error) {
@@ -116,27 +130,27 @@ func check(e error) {
 	}
 }
 
-func PrintResults(operationResults OperationResults, executeOperations FlagOperations) {
-	var output string
-	// fmt.Println(operationResults)
-	if executeOperations.CLines {
-		output += fmt.Sprintf("%8d", operationResults.NLines)
-	}
+func PrintResults(operationResults []OperationResults, executeOperations FlagOperations) {
+	for _, opRes := range operationResults {
+		var output string
+		if executeOperations.CLines {
+			output += fmt.Sprintf("%8d", opRes.NLines)
+		}
 
-	if executeOperations.CWords {
-		output += fmt.Sprintf("%8d", operationResults.NWords)
-	}
+		if executeOperations.CWords {
+			output += fmt.Sprintf("%8d", opRes.NWords)
+		}
 
-	if executeOperations.CChars {
-		output += fmt.Sprintf("%8d", operationResults.NChars)
-	}
+		if executeOperations.CChars {
+			output += fmt.Sprintf("%8d", opRes.NChars)
+		}
 
-	if !executeOperations.CLines && !executeOperations.CWords && !executeOperations.CChars {
-		output += fmt.Sprintf("%8d", operationResults.NLines)
-		output += fmt.Sprintf("%8d", operationResults.NWords)
-		output += fmt.Sprintf("%8d", operationResults.NChars)
+		if !executeOperations.CLines && !executeOperations.CWords && !executeOperations.CChars {
+			output += fmt.Sprintf("%8d", opRes.NLines)
+			output += fmt.Sprintf("%8d", opRes.NWords)
+			output += fmt.Sprintf("%8d", opRes.NChars)
+		}
+		output += fmt.Sprint(" " + opRes.filename)
+		fmt.Println(output)
 	}
-	output += fmt.Sprint(" " + operationResults.filename + "\n")
-
-	fmt.Println(output)
 }
