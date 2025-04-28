@@ -12,6 +12,13 @@ type FlagOperations struct {
 	CChars bool
 }
 
+type OperationResults struct {
+	NLines   int
+	NWords   int
+	NChars   int
+	filename string
+}
+
 func countLines(text string) int {
 	splitLines := strings.Split(text, "\n")
 	return len(splitLines) - 1
@@ -85,24 +92,51 @@ func readTextFromFile(filename string) string {
 	return string(data)
 }
 
-func CountOperations(filename string, executeOperations FlagOperations) {
+func CountOperations(filename string, executeOperations FlagOperations) OperationResults {
+	var operationResults OperationResults
 	text := readTextFromFile(filename)
-	outputString := "%8d %s\n"
-	if executeOperations.CLines {
-		outputString = fmt.Sprintf("%8d %s\n", countLines(text), filename)
-	} else if executeOperations.CWords {
-		outputString = fmt.Sprintf("%8d %s\n", countWords(text), filename)
-	} else if executeOperations.CChars {
-		outputString = fmt.Sprintf("%8d %s\n", countCharacters(text), filename)
-	} else {
-		outputString = fmt.Sprintf("%8d %8d %8d %s\n", countLines(text), countWords(text), countCharacters(text), filename)
-	}
+	// fmt.Println(executeOperations)
 
-	fmt.Fprint(os.Stdout, outputString)
+	if executeOperations.CLines {
+		operationResults.NLines = countLines(text)
+	}
+	if executeOperations.CWords {
+		operationResults.NWords = countWords(text)
+	}
+	if executeOperations.CChars {
+		operationResults.NChars = countCharacters(text)
+	}
+	operationResults.filename = filename
+	return operationResults
 }
 
 func check(e error) {
 	if e != nil {
 		panic(e)
 	}
+}
+
+func PrintResults(operationResults OperationResults, executeOperations FlagOperations) {
+	var output string
+	// fmt.Println(operationResults)
+	if executeOperations.CLines {
+		output += fmt.Sprintf("%8d", operationResults.NLines)
+	}
+
+	if executeOperations.CWords {
+		output += fmt.Sprintf("%8d", operationResults.NWords)
+	}
+
+	if executeOperations.CChars {
+		output += fmt.Sprintf("%8d", operationResults.NChars)
+	}
+
+	if !executeOperations.CLines && !executeOperations.CWords && !executeOperations.CChars {
+		output += fmt.Sprintf("%8d", operationResults.NLines)
+		output += fmt.Sprintf("%8d", operationResults.NWords)
+		output += fmt.Sprintf("%8d", operationResults.NChars)
+	}
+	output += fmt.Sprint(" " + operationResults.filename + "\n")
+
+	fmt.Println(output)
 }
