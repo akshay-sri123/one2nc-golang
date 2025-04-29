@@ -1,6 +1,7 @@
 package operations
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -16,7 +17,7 @@ type OperationResults struct {
 	NLines   int
 	NWords   int
 	NChars   int
-	filename string
+	Filename string
 }
 
 func countLines(text string) int {
@@ -68,23 +69,24 @@ func checkFilePermissions(filename string) bool {
 	return true
 }
 
-func CheckFile(filesToProcess []string, command string) {
-	for _, filename := range filesToProcess {
-		if !checkIfFileExists(filename) {
-			fmt.Fprintf(os.Stderr, "%s: %s: read: No such file or directory\n", command, filename)
-			os.Exit(1)
-		}
-
-		if !checkIfFileOrDir(filename) {
-			fmt.Fprintf(os.Stderr, "%s: %s: open: Is a directory\n", command, filename)
-			os.Exit(1)
-		}
-
-		if !checkFilePermissions(filename) {
-			fmt.Fprintf(os.Stderr, "%s: %s: open: Permission denied\n", command, filename)
-			os.Exit(1)
-		}
+func checkFile(filename string, command string) error {
+	errOutput := ""
+	var err error
+	if !checkIfFileExists(filename) {
+		errOutput = fmt.Sprintf("%s: %s: read: No such file or directory\n", command, filename)
+		err = errors.New(errOutput)
 	}
+
+	if !checkIfFileOrDir(filename) {
+		errOutput = fmt.Sprintf("%s: %s: open: Is a directory\n", command, filename)
+		err = errors.New(errOutput)
+	}
+
+	if !checkFilePermissions(filename) {
+		errOutput = fmt.Sprintf("%s: %s: open: Permission denied\n", command, filename)
+		err = errors.New(errOutput)
+	}
+	return err
 }
 
 func readTextFromFile(filename string) string {
@@ -94,10 +96,15 @@ func readTextFromFile(filename string) string {
 	return string(data)
 }
 
-func CountOperations(executeOperations FlagOperations, filesToProcess []string) []OperationResults {
+func CountOperations(executeOperations FlagOperations, filesToProcess []string, command string) []OperationResults {
 	var operationResultsList []OperationResults
 	for _, file := range filesToProcess {
 		var operationResults OperationResults
+		err := checkFile(file, command)
+		if err != nil {
+			fmt.Print(err.Error())
+			continue
+		}
 		text := readTextFromFile(file)
 
 		if executeOperations.CLines {
@@ -118,7 +125,7 @@ func CountOperations(executeOperations FlagOperations, filesToProcess []string) 
 			operationResults.NChars = countCharacters(text)
 		}
 
-		operationResults.filename = file
+		operationResults.Filename = file
 		operationResultsList = append(operationResultsList, operationResults)
 	}
 	return operationResultsList
@@ -130,7 +137,8 @@ func check(e error) {
 	}
 }
 
-func PrintResults(operationResults []OperationResults, executeOperations FlagOperations) {
+func GenerateOutput(operationResults []OperationResults, executeOperations FlagOperations) string {
+	var finalResult string
 	for _, opRes := range operationResults {
 		var output string
 		if executeOperations.CLines {
@@ -150,7 +158,8 @@ func PrintResults(operationResults []OperationResults, executeOperations FlagOpe
 			output += fmt.Sprintf("%8d", opRes.NWords)
 			output += fmt.Sprintf("%8d", opRes.NChars)
 		}
-		output += fmt.Sprint(" " + opRes.filename)
-		fmt.Println(output)
+		output += fmt.Sprint(" " + opRes.Filename)
+		finalResult += output + "\n"
 	}
+	return finalResult
 }

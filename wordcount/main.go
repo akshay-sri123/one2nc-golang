@@ -1,11 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"one2n/wordcount/operations"
 	"os"
 )
 
-func setFlagOperations(passedOperations []string) (operations.FlagOperations, []string) {
+func parseArguments(passedOperations []string) (operations.FlagOperations, []string) {
 	var executeOperations operations.FlagOperations
 	var filenames []string
 	if len(passedOperations) == 0 {
@@ -30,27 +31,21 @@ func setFlagOperations(passedOperations []string) (operations.FlagOperations, []
 
 func main() {
 	cmdArgs := os.Args
-	command := ""
-	filesToProcess := []string{}
 	var executeOperations operations.FlagOperations
+	var filesToProcess []string
 
-	if len(cmdArgs) > 3 {
-		// Passing ./wc -l -w -c filename1 filename2 filename3
-		command = cmdArgs[0]
-		executeOperations, filesToProcess = setFlagOperations(cmdArgs[1:])
-	} else if len(cmdArgs) == 2 {
-		// Passing ./wc filename
-		command = cmdArgs[0]
-		executeOperations, filesToProcess = setFlagOperations(cmdArgs[1:])
-	} else {
-		// Passing ./wc -l filename
-		command = cmdArgs[0]
-		executeOperations, filesToProcess = setFlagOperations(cmdArgs[1:])
+	executeOperations, filesToProcess = parseArguments(cmdArgs[1:])
+	operationResults := operations.CountOperations(executeOperations, filesToProcess, cmdArgs[0])
+	// wordCountOutput := operations.GenerateOutput(operationResults, executeOperations)
+	fmt.Print(operations.GenerateOutput(operationResults, executeOperations))
+	if len(filesToProcess) > 1 {
+		var totalResult operations.OperationResults
+		for _, opRes := range operationResults {
+			totalResult.NChars += opRes.NChars
+			totalResult.NWords += opRes.NWords
+			totalResult.NLines += opRes.NLines
+		}
+		totalResult.Filename += "Total"
+		fmt.Print(operations.GenerateOutput([]operations.OperationResults{totalResult}, executeOperations))
 	}
-
-	operations.CheckFile(filesToProcess, command)
-	operationResults := operations.CountOperations(executeOperations, filesToProcess)
-	// fmt.Println(filesToProcess)
-	// fmt.Println(operationResults)
-	operations.PrintResults(operationResults, executeOperations)
 }
