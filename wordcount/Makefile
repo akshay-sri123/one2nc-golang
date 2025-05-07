@@ -1,7 +1,7 @@
 test:
 	/usr/local/go/bin/go test -v ./...
 
-build: clean
+build:
 	/usr/local/go/bin/go build -o ./bin/wc
 
 clean:
