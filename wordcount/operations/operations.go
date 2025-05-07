@@ -102,6 +102,7 @@ func countOperation(executeOperations FlagOperations, file string, command strin
 	var operationResult OperationResults
 	err := checkFile(file, command)
 	if err != nil {
+		operationResult.Filename = file
 		return operationResult, err
 	}
 	text, err := readTextFromFile(file)
@@ -134,9 +135,6 @@ func countOperation(executeOperations FlagOperations, file string, command strin
 func generateOutput(operationResults []OperationResults, executeOperations FlagOperations) {
 	var finalResult string
 	for _, opRes := range operationResults {
-		if opRes.NLines == 0 && opRes.NWords == 0 && opRes.NChars == 0 {
-			continue
-		}
 		var output string
 		if executeOperations.CLines {
 			output += fmt.Sprintf("%8d", opRes.NLines)
@@ -159,7 +157,6 @@ func generateOutput(operationResults []OperationResults, executeOperations FlagO
 		finalResult += output + "\n"
 	}
 	fmt.Print(finalResult)
-	// return finalResult
 }
 
 func CalculateResult(flagOperations FlagOperations, filesToProcess []string, command string) {
@@ -168,7 +165,6 @@ func CalculateResult(flagOperations FlagOperations, filesToProcess []string, com
 		operationResult, error := countOperation(flagOperations, file, command)
 		if error != nil {
 			fmt.Print(error.Error())
-			continue
 		}
 		generateOutput([]OperationResults{operationResult}, flagOperations)
 		finalOperationResult = append(finalOperationResult, operationResult)
