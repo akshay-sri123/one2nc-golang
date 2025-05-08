@@ -97,7 +97,7 @@ func readTextFromFile(filename string) (string, error) {
 	return string(data), nil
 }
 
-func countOperation(executeOperations FlagOperations, file string, command string, text string) (OperationResults, error) {
+func countOperation(executeOperations FlagOperations, file string, text string) (OperationResults, error) {
 	var operationResult OperationResults
 
 	if executeOperations.CLines {
@@ -165,12 +165,12 @@ func CalculateResult(flagOperations FlagOperations, filesToProcess []string, com
 			continue
 		}
 
-		operationResult, err := countOperation(flagOperations, file, command, text)
+		operationResult, err := countOperation(flagOperations, file, text)
 		if err != nil {
 			fmt.Print(err.Error())
 		}
 
-		go generateOutput([]OperationResults{operationResult}, flagOperations)
+		generateOutput([]OperationResults{operationResult}, flagOperations)
 		finalOperationResult = append(finalOperationResult, operationResult)
 	}
 
