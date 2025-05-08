@@ -92,23 +92,13 @@ func checkFile(filename string, command string) error {
 func readTextFromFile(filename string) (string, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		return "", err
 	}
 
 	return string(data), nil
 }
 
-func countOperation(executeOperations FlagOperations, file string, command string) (OperationResults, error) {
+func countOperation(executeOperations FlagOperations, file string, command string, text string) (OperationResults, error) {
 	var operationResult OperationResults
-	err := checkFile(file, command)
-	if err != nil {
-		operationResult.Filename = file
-		return operationResult, err
-	}
-	text, err := readTextFromFile(file)
-	if err != nil {
-		return operationResult, err
-	}
 
 	if executeOperations.CLines {
 		operationResult.NLines = countLines(text)
@@ -137,21 +127,21 @@ func generateOutput(operationResults []OperationResults, executeOperations FlagO
 	for _, opRes := range operationResults {
 		var output string
 		if executeOperations.CLines {
-			output += fmt.Sprintf("%8d", opRes.NLines)
+			output += fmt.Sprintf("%8d ", opRes.NLines)
 		}
 
 		if executeOperations.CWords {
-			output += fmt.Sprintf("%8d", opRes.NWords)
+			output += fmt.Sprintf("%8d ", opRes.NWords)
 		}
 
 		if executeOperations.CChars {
-			output += fmt.Sprintf("%8d", opRes.NChars)
+			output += fmt.Sprintf("%8d ", opRes.NChars)
 		}
 
 		if !executeOperations.CLines && !executeOperations.CWords && !executeOperations.CChars {
-			output += fmt.Sprintf("%8d", opRes.NLines)
-			output += fmt.Sprintf("%8d", opRes.NWords)
-			output += fmt.Sprintf("%8d", opRes.NChars)
+			output += fmt.Sprintf("%8d ", opRes.NLines)
+			output += fmt.Sprintf("%8d ", opRes.NWords)
+			output += fmt.Sprintf("%8d ", opRes.NChars)
 		}
 		output += fmt.Sprint(" " + opRes.Filename)
 		finalResult += output + "\n"
@@ -160,13 +150,27 @@ func generateOutput(operationResults []OperationResults, executeOperations FlagO
 }
 
 func CalculateResult(flagOperations FlagOperations, filesToProcess []string, command string) {
+
 	var finalOperationResult []OperationResults
 	for _, file := range filesToProcess {
-		operationResult, error := countOperation(flagOperations, file, command)
-		if error != nil {
-			fmt.Print(error.Error())
+		err := checkFile(file, command)
+		if err != nil {
+			fmt.Print(err.Error())
+			continue
 		}
-		generateOutput([]OperationResults{operationResult}, flagOperations)
+
+		text, err := readTextFromFile(file)
+		if err != nil {
+			fmt.Print(err.Error())
+			continue
+		}
+
+		operationResult, err := countOperation(flagOperations, file, command, text)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+
+		go generateOutput([]OperationResults{operationResult}, flagOperations)
 		finalOperationResult = append(finalOperationResult, operationResult)
 	}
 
