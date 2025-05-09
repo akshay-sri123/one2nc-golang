@@ -20,6 +20,10 @@ type OperationResults struct {
 	Filename string
 }
 
+var (
+	totalLines, totalWords, totalChars int
+)
+
 func countLines(text string) int {
 	splitLines := strings.Split(text, "\n")
 	return len(splitLines) - 1
@@ -89,16 +93,22 @@ func checkFile(filename string, command string) error {
 	return err
 }
 
-func readTextFromFile(filename string) (string, error) {
+func readTextFromFile(filename string, textChan chan<- string) {
+
 	data, err := os.ReadFile(filename)
 	if err != nil {
+		fmt.Print(err.Error())
 	}
 
-	return string(data), nil
+	textChan <- string(data)
+
+	// return string(data), nil
 }
 
-func countOperation(executeOperations FlagOperations, file string, text string) (OperationResults, error) {
+func countOperation(executeOperations FlagOperations, textChan <-chan string) (OperationResults, error) {
 	var operationResult OperationResults
+	text := <-textChan
+	// fmt.Print(text)
 
 	if executeOperations.CLines {
 		operationResult.NLines = countLines(text)
@@ -118,71 +128,75 @@ func countOperation(executeOperations FlagOperations, file string, text string) 
 		operationResult.NChars = countCharacters(text)
 	}
 
-	operationResult.Filename = file
 	return operationResult, nil
 }
 
-func generateOutput(operationResults []OperationResults, executeOperations FlagOperations) {
+func (operationResult OperationResults) generateOutput(executeOperations FlagOperations) string {
 	var finalResult string
-	for _, opRes := range operationResults {
-		var output string
-		if executeOperations.CLines {
-			output += fmt.Sprintf("%8d ", opRes.NLines)
-		}
-
-		if executeOperations.CWords {
-			output += fmt.Sprintf("%8d ", opRes.NWords)
-		}
-
-		if executeOperations.CChars {
-			output += fmt.Sprintf("%8d ", opRes.NChars)
-		}
-
-		if !executeOperations.CLines && !executeOperations.CWords && !executeOperations.CChars {
-			output += fmt.Sprintf("%8d ", opRes.NLines)
-			output += fmt.Sprintf("%8d ", opRes.NWords)
-			output += fmt.Sprintf("%8d ", opRes.NChars)
-		}
-		output += fmt.Sprint(" " + opRes.Filename)
-		finalResult += output + "\n"
+	var output string
+	if executeOperations.CLines {
+		output += fmt.Sprintf("%8d ", operationResult.NLines)
 	}
-	fmt.Print(finalResult)
+
+	if executeOperations.CWords {
+		output += fmt.Sprintf("%8d ", operationResult.NWords)
+	}
+
+	if executeOperations.CChars {
+		output += fmt.Sprintf("%8d ", operationResult.NChars)
+	}
+
+	if !executeOperations.CLines && !executeOperations.CWords && !executeOperations.CChars {
+		output += fmt.Sprintf("%8d ", operationResult.NLines)
+		output += fmt.Sprintf("%8d ", operationResult.NWords)
+		output += fmt.Sprintf("%8d ", operationResult.NChars)
+	}
+	output += fmt.Sprint(" " + operationResult.Filename)
+	finalResult += output + "\n"
+
+	return finalResult
 }
 
 func CalculateResult(flagOperations FlagOperations, filesToProcess []string, command string) {
+	textChan := make(chan string)
+	defer close(textChan)
 
-	var finalOperationResult []OperationResults
-	for _, file := range filesToProcess {
-		err := checkFile(file, command)
+	for _, filename := range filesToProcess {
+		err := checkFile(filename, command)
 		if err != nil {
 			fmt.Print(err.Error())
 			continue
 		}
 
-		text, err := readTextFromFile(file)
+		// text, err := readTextFromFile(file)
+		// if err != nil {
+		// 	fmt.Print(err.Error())
+		// 	continue
+		// }
+
+		go readTextFromFile(filename, textChan)
+
+		operationResult, err := countOperation(flagOperations, textChan)
+		operationResult.Filename = filename
+
+		totalLines += operationResult.NLines
+		totalWords += operationResult.NWords
+		totalChars += operationResult.NChars
+
 		if err != nil {
 			fmt.Print(err.Error())
-			continue
 		}
 
-		operationResult, err := countOperation(flagOperations, file, text)
-		if err != nil {
-			fmt.Print(err.Error())
-		}
-
-		generateOutput([]OperationResults{operationResult}, flagOperations)
-		finalOperationResult = append(finalOperationResult, operationResult)
+		fmt.Print(operationResult.generateOutput(flagOperations))
 	}
 
 	// When processing for multiple files print the Total count as well
 	if len(filesToProcess) > 1 {
 		var totalResult OperationResults
-		for _, opRes := range finalOperationResult {
-			totalResult.NChars += opRes.NChars
-			totalResult.NWords += opRes.NWords
-			totalResult.NLines += opRes.NLines
-		}
-		totalResult.Filename += "total"
-		generateOutput([]OperationResults{totalResult}, flagOperations)
+		totalResult.NChars = totalChars
+		totalResult.NWords = totalWords
+		totalResult.NLines = totalLines
+		totalResult.Filename = "total"
+		fmt.Print(totalResult.generateOutput(flagOperations))
 	}
 }
