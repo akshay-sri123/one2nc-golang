@@ -1,6 +1,7 @@
 package operations
 
 import (
+	"errors"
 	"os"
 	"strings"
 )
@@ -22,4 +23,33 @@ func readFromFile(filename string) (string, error) {
 	}
 
 	return string(data), nil
+}
+
+func checkIfFileExists(filename string) bool {
+	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+	return true
+}
+
+func checkIfFileOrDir(filename string) bool {
+	info, err := os.Stat(filename)
+	if err != nil {
+		return false
+	}
+	if info.IsDir() {
+		return false
+	}
+	return true
+}
+
+func checkFilePermissions(filename string) bool {
+	info, err := os.Stat(filename)
+	if err != nil {
+		return false
+	}
+	if info.Mode().Perm()&0444 != 0444 {
+		return false
+	}
+	return true
 }

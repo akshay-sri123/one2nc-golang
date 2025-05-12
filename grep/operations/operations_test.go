@@ -56,3 +56,72 @@ func TestSearchSubstringTable(t *testing.T) {
 		})
 	}
 }
+
+func TestFileChecksTable(t *testing.T) {
+	var runTests = []struct {
+		name        string
+		filename    string
+		isProtected bool
+		isFileExist bool
+		isDir       bool
+		expected    bool
+	}{
+		{
+			name:        "Check protected file",
+			filename:    "test-data/protected-file.txt",
+			isProtected: true,
+			isFileExist: false,
+			isDir:       false,
+			expected:    true,
+		},
+		{
+			name:        "Check if file exists",
+			filename:    "test-data/test_file.txt",
+			isProtected: false,
+			isFileExist: true,
+			isDir:       false,
+			expected:    true,
+		},
+		{
+			name:        "Check if file exists 2",
+			filename:    "test-data/random_file.txt",
+			isProtected: false,
+			isFileExist: true,
+			isDir:       false,
+			expected:    false,
+		},
+		{
+			name:        "Check if directory",
+			filename:    "test-data",
+			isProtected: false,
+			isFileExist: false,
+			isDir:       true,
+			expected:    true,
+		},
+	}
+
+	for _, tt := range runTests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.isProtected {
+				got := checkFilePermissions(tt.filename)
+				if tt.expected == got {
+					t.Errorf("Expected %v, got %v", tt.expected, got)
+				}
+			}
+
+			if tt.isFileExist {
+				got := checkIfFileExists(tt.filename)
+				if tt.expected != got {
+					t.Errorf("Expected %v, got %v", tt.expected, got)
+				}
+			}
+
+			if tt.isDir {
+				got := checkIfFileOrDir(tt.filename)
+				if tt.expected == got {
+					t.Errorf("Expected %v, got %v", tt.expected, got)
+				}
+			}
+		})
+	}
+}
