@@ -2,9 +2,26 @@ package operations
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 )
+
+type FlagOperations struct {
+	FilterString   string
+	FilesToProcess string
+}
+
+type GrepResult struct {
+	filename        string
+	matchingResults []string
+}
+
+func (grepResult GrepResult) printResults() {
+	for _, result := range grepResult.matchingResults {
+		fmt.Println(result)
+	}
+}
 
 func searchSubstring(text string, substring string) []string {
 	var resultSet []string
@@ -52,4 +69,40 @@ func checkFilePermissions(filename string) bool {
 		return false
 	}
 	return true
+}
+
+func checkFile(filename string, command string) error {
+	errOutput := ""
+	var err error
+	if !checkIfFileExists(filename) {
+		errOutput = fmt.Sprintf("%s: %s: read: No such file or directory\n", command, filename)
+		err = errors.New(errOutput)
+	}
+
+	if !checkIfFileOrDir(filename) {
+		errOutput = fmt.Sprintf("%s: %s: open: Is a directory\n", command, filename)
+		err = errors.New(errOutput)
+	}
+
+	if !checkFilePermissions(filename) {
+		errOutput = fmt.Sprintf("%s: %s: open: Permission denied\n", command, filename)
+		err = errors.New(errOutput)
+	}
+	return err
+}
+
+func RunOperation(flagOperations FlagOperations, command string) {
+	var grepResult GrepResult
+	err := checkFile(flagOperations.FilesToProcess, command)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	fileText, err := readFromFile(flagOperations.FilesToProcess)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	grepResult.filename = flagOperations.FilesToProcess
+
+	grepResult.matchingResults = searchSubstring(fileText, flagOperations.FilterString)
+	grepResult.printResults()
 }
