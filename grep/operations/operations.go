@@ -10,7 +10,7 @@ import (
 type FlagOperations struct {
 	FilterString   string
 	FilesToProcess string
-	StdInput       []string
+	StdInput       string
 }
 
 type GrepResult struct {
@@ -29,16 +29,6 @@ func searchSubstring(text string, substring string) []string {
 	for _, line := range strings.Split(text, "\n") {
 		if strings.Contains(line, substring) {
 			resultSet = append(resultSet, line)
-		}
-	}
-	return resultSet
-}
-
-func searchSubstringStdin(stdInput []string, substring string) []string {
-	var resultSet []string
-	for _, input := range stdInput {
-		if strings.Contains(input, substring) {
-			resultSet = append(resultSet, input)
 		}
 	}
 	return resultSet
@@ -116,9 +106,8 @@ func RunOperation(flagOperations FlagOperations, command string) {
 		grepResult.filename = flagOperations.FilesToProcess
 
 		grepResult.matchingResults = searchSubstring(fileText, flagOperations.FilterString)
-	} else if flagOperations.StdInput != nil {
-		// fmt.Println(flagOperations.StdInput)
-		grepResult.matchingResults = searchSubstringStdin(flagOperations.StdInput, flagOperations.FilterString)
+	} else if flagOperations.StdInput != "" {
+		grepResult.matchingResults = searchSubstring(flagOperations.StdInput, flagOperations.FilterString)
 	}
 	grepResult.printResults()
 }

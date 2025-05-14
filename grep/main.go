@@ -9,23 +9,26 @@ import (
 
 func parseArguments(flagOperations operations.FlagOperations, passedOperations []string) operations.FlagOperations {
 	flagOperations.FilterString = passedOperations[1]
+	var stdIn string
 
 	if len(passedOperations) == 2 {
 		scanner := bufio.NewScanner(os.Stdin)
-		var lines []string
+
 		for {
 			scanner.Scan()
 			line := scanner.Text()
 			if len(line) == 0 {
 				break
 			}
-			lines = append(lines, line)
+
+			stdIn = stdIn + line + "\n"
 		}
 		err := scanner.Err()
 		if err != nil {
 			log.Fatal(err)
 		}
-		flagOperations.StdInput = lines
+		flagOperations.StdInput = stdIn
+
 	} else {
 		flagOperations.FilesToProcess = passedOperations[2]
 	}
@@ -39,7 +42,4 @@ func main() {
 	flagOperations = parseArguments(flagOperations, cmdArgs)
 
 	operations.RunOperation(flagOperations, cmdArgs[0])
-
-	// flagOperations := parseArguments(flagOperations, cmdArgs[1:])
-	// operations.RunOperation(flagOperations, cmdArgs[0])
 }
