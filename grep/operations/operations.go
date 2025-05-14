@@ -10,6 +10,7 @@ import (
 type FlagOperations struct {
 	FilterString   string
 	FilesToProcess string
+	StdInput       []string
 }
 
 type GrepResult struct {
@@ -28,6 +29,16 @@ func searchSubstring(text string, substring string) []string {
 	for _, line := range strings.Split(text, "\n") {
 		if strings.Contains(line, substring) {
 			resultSet = append(resultSet, line)
+		}
+	}
+	return resultSet
+}
+
+func searchSubstringStdin(stdInput []string, substring string) []string {
+	var resultSet []string
+	for _, input := range stdInput {
+		if strings.Contains(input, substring) {
+			resultSet = append(resultSet, input)
 		}
 	}
 	return resultSet
@@ -93,16 +104,21 @@ func checkFile(filename string, command string) error {
 
 func RunOperation(flagOperations FlagOperations, command string) {
 	var grepResult GrepResult
-	err := checkFile(flagOperations.FilesToProcess, command)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	fileText, err := readFromFile(flagOperations.FilesToProcess)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	grepResult.filename = flagOperations.FilesToProcess
+	if flagOperations.FilesToProcess != "" {
+		err := checkFile(flagOperations.FilesToProcess, command)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		fileText, err := readFromFile(flagOperations.FilesToProcess)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		grepResult.filename = flagOperations.FilesToProcess
 
-	grepResult.matchingResults = searchSubstring(fileText, flagOperations.FilterString)
+		grepResult.matchingResults = searchSubstring(fileText, flagOperations.FilterString)
+	} else if flagOperations.StdInput != nil {
+		// fmt.Println(flagOperations.StdInput)
+		grepResult.matchingResults = searchSubstringStdin(flagOperations.StdInput, flagOperations.FilterString)
+	}
 	grepResult.printResults()
 }
